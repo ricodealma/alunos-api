@@ -27,7 +27,7 @@ echo -e "${GREEN}✓ API image built successfully${NC}"
 echo ""
 
 echo -e "${BLUE}2. Building Frontend image...${NC}"
-cd ../alunos-web/frontend
+cd ../alunos-web
 docker build -t ${WEB_IMAGE}:${VERSION} . || {
     echo -e "${RED}Erro ao construir imagem do Frontend${NC}"
     exit 1
