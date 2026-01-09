@@ -22,9 +22,6 @@ services:
 
   alunos-api:
     image: ricodealma/alunos-api:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     container_name: alunos-api
     restart: always
     ports:
@@ -50,25 +47,22 @@ services:
 
   alunos-web:
     image: ricodealma/alunos-web:latest
-    # build:
-    #   context: ../alunos-web/frontend
-    #   dockerfile: Dockerfile
     container_name: alunos-web
     restart: always
     ports:
       - '3000:3000'
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
-      API_INTERNAL_URL: "http://alunos-api:8080/api"
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+      API_INTERNAL_URL: http://alunos-api:8080/api
       NODE_ENV: production
     depends_on:
       - alunos-api
     networks:
       - alunos-network
 
-volumes:
-  postgres_data:
-
 networks:
   alunos-network:
     driver: bridge
+
+volumes:
+  postgres_data:
