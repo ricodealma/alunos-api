@@ -21,7 +21,10 @@ services:
       - alunos-network
 
   alunos-api:
-    image: ricodealma/alunos-api:latest
+    # image: ricodealma/alunos-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: alunos-api
     restart: always
     ports:
@@ -46,13 +49,17 @@ services:
       - alunos-network
 
   alunos-web:
-    image: ricodealma/alunos-web:latest
+    # image: ricodealma/alunos-web:latest
+    build:
+      context: ../alunos-web/frontend
+      dockerfile: Dockerfile
     container_name: alunos-web
     restart: always
     ports:
       - '3000:3000'
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+      API_INTERNAL_URL: "http://alunos-api:8080/api"
       NODE_ENV: production
     depends_on:
       - alunos-api
