@@ -21,10 +21,10 @@ services:
       - alunos-network
 
   alunos-api:
-    # image: ricodealma/alunos-api:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ricodealma/alunos-api:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: alunos-api
     restart: always
     ports:
@@ -49,10 +49,10 @@ services:
       - alunos-network
 
   alunos-web:
-    # image: ricodealma/alunos-web:latest
-    build:
-      context: ../alunos-web/frontend
-      dockerfile: Dockerfile
+    image: ricodealma/alunos-web:latest
+    # build:
+    #   context: ../alunos-web/frontend
+    #   dockerfile: Dockerfile
     container_name: alunos-web
     restart: always
     ports:
