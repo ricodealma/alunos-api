@@ -11,11 +11,13 @@ namespace Alunos.Api.Infra.Extensions
         private static void AddDaos(this IServiceCollection serviceCollection)
         {
             serviceCollection.AddScoped<IAlunoDao, AlunoDao>();
+            serviceCollection.AddScoped<Alunos.Api.Infra.Data.User.Entities.IUserDao, Alunos.Api.Infra.Data.User.Entities.UserDao>();
         }
 
         private static void AddRepositories(this IServiceCollection serviceCollection)
         {
             serviceCollection.AddScoped<IAlunoRepository, AlunoRepository>();
+            serviceCollection.AddScoped<Alunos.Api.Domain.Aggregates.User.IUserRepository, UserRepository>();
         }
 
         private static void AddPersistence(this IServiceCollection serviceCollection)

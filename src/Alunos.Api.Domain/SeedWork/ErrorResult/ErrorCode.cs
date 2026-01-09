@@ -7,7 +7,8 @@ namespace Alunos.Api.Domain.SeedWork.ErrorResult
         BadRequest = 400,
         Unauthorized = 401,
         Forbidden = 403,
-        InternalServerError = 500,
-        UnprocessableEntity = 422
+        Conflict = 409,
+        UnprocessableEntity = 422,
+        InternalServerError = 500
     }
 }

@@ -1,27 +1,23 @@
 -- Inicialização do banco de dados para Alunos API
 
--- Tabela de usuários para autenticação
+-- Feedback de início
+DO $$ BEGIN
+    RAISE NOTICE 'Iniciando o seed do banco de dados...';
+END $$;
+
+-- Tabela de usuários para autenticação (Unificada)
 CREATE TABLE IF NOT EXISTS usuario (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    username VARCHAR(100), -- Opcional, mantido para compatibilidade
     email VARCHAR(255) NOT NULL UNIQUE,
-    nome VARCHAR(255) NOT NULL,
-    ativo BOOLEAN DEFAULT TRUE,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    password_hash VARCHAR(255) NOT NULL,
+    nome VARCHAR(255), -- Opcional
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    data_criacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao TIMESTAMP NULL
 );
 
--- Tabela Users para JWT authentication (novo sistema)
-CREATE TABLE IF NOT EXISTS "Users" (
-    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "Email" VARCHAR(255) NOT NULL UNIQUE,
-    "PasswordHash" VARCHAR(255) NOT NULL,
-    "CreatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "UpdatedAt" TIMESTAMP NULL,
-    "IsActive" BOOLEAN NOT NULL DEFAULT true
-);
-
-CREATE INDEX IF NOT EXISTS "IX_Users_Email" ON "Users"("Email");
+CREATE INDEX IF NOT EXISTS "IX_usuario_email" ON usuario(email);
 
 -- Tabela de alunos
 CREATE TABLE IF NOT EXISTS aluno (
@@ -31,27 +27,23 @@ CREATE TABLE IF NOT EXISTS aluno (
     serie VARCHAR(100) NOT NULL
 );
 
--- Inserir usuários de exemplo (senhas: admin123, user123)
--- Nota: Estas são hashes bcrypt para fins de demonstração
-INSERT INTO usuario (id, username, password_hash, email, nome, ativo) VALUES
-    ('00000000-0000-0000-0000-000000000001', 'admin', '$2a$11$X2aKzEqZqX4nP8hPE9vLVeB2YV0wYlKqLh2h2K4JlnPxQnFKHcQDi', 'admin@alunos.com', 'Administrador', TRUE),
-    ('00000000-0000-0000-0000-000000000002', 'user', '$2a$11$vK8P3qKzEqZqX4nP8hPE9vLVeB2YV0wYlKqLh2h2K4JlnPxQnFKH', 'user@alunos.com', 'Usuário Comum', TRUE),
-    ('00000000-0000-0000-0000-000000000003', 'professor', '$2a$11$mL7P2qKzEqZqX4nP8hPE9vLVeB2YV0wYlKqLh2h2K4JlnPxQnFKH', 'professor@alunos.com', 'Professor Silva', TRUE)
-ON CONFLICT (username) DO NOTHING;
-
--- Inserir test user para JWT authentication
--- Email: admin@example.com
--- Password: admin123
--- BCrypt hash generated with work factor 11
-INSERT INTO "Users" ("Id", "Email", "PasswordHash", "CreatedAt", "IsActive")
+-- Inserir usuário Admin (Senha: admin123)
+INSERT INTO usuario (id, username, email, password_hash, nome, ativo, data_criacao)
 VALUES (
     gen_random_uuid(),
+    'admin',
     'admin@example.com',
-    '$2a$11$N9qo8uLOickgx2ZMRZoMye7FRNv2JYMQzl3g5Zgn7GdOaXd1.yqq2',
-    NOW(),
-    true
+    '$2a$11$OI9H1I1o3PXhYcgGrz8fX.cNaffcsCBFt5FC/saUZAxdBOYLNFOSO',
+    'Administrador',
+    true,
+    NOW()
 )
-ON CONFLICT ("Email") DO NOTHING;
+ON CONFLICT (email) DO NOTHING;
+
+-- Feedback de usuário criado
+DO $$ BEGIN
+    RAISE NOTICE 'Usuário admin@example.com criado/verificado.';
+END $$;
 
 -- Inserir dados de exemplo de alunos
 INSERT INTO aluno (id, nome, email, serie) VALUES
@@ -61,3 +53,8 @@ INSERT INTO aluno (id, nome, email, serie) VALUES
     (gen_random_uuid(), 'Ana Costa', 'ana.costa@example.com', '5ª Série'),
     (gen_random_uuid(), 'Carlos Ferreira', 'carlos.ferreira@example.com', '8ª Série')
 ON CONFLICT (email) DO NOTHING;
+
+-- Feedback final
+DO $$ BEGIN
+    RAISE NOTICE 'Seed do banco de dados concluído com sucesso!';
+END $$;

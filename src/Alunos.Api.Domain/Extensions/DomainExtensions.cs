@@ -10,6 +10,7 @@ namespace Alunos.Api.Domain.Extensions
         {
             serviceCollection.AddSingleton<EnvironmentKey>();
             serviceCollection.AddScoped<IAlunoService, AlunoService>();
+            serviceCollection.AddScoped<Aggregates.User.IUserService, Aggregates.User.UserService>();
         }
     }
 }

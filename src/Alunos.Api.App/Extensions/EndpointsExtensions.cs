@@ -19,10 +19,10 @@ namespace Alunos.Api.App.Extensions
             endpoints.AddAuthEndpoints();
 
             // Protected CRUD endpoints
-            endpoints.MapPost("/v1/alunos", CreateAluno).RequireAuthorization();
-            endpoints.MapPut("/v1/alunos/{id}", UpdateAlunoById).RequireAuthorization();
-            endpoints.MapDelete("/v1/alunos/{id}", DeleteAlunoById).RequireAuthorization();
-            endpoints.MapGet("/v1/alunos", GetAlunosByFilter).RequireAuthorization();
+            endpoints.MapPost("/api/v1/alunos", CreateAluno).RequireAuthorization();
+            endpoints.MapPut("/api/v1/alunos/{id}", UpdateAlunoById).RequireAuthorization();
+            endpoints.MapDelete("/api/v1/alunos/{id}", DeleteAlunoById).RequireAuthorization();
+            endpoints.MapGet("/api/v1/alunos", GetAlunosByFilter).RequireAuthorization();
         }
 
         [SwaggerOperation(
@@ -50,7 +50,7 @@ namespace Alunos.Api.App.Extensions
             if (result is null || error.Error)
                 return GenerateErrorResult(error);
 
-            return Results.Created($"/v1/alunos/{result.Id}", result);
+            return Results.Created($"/api/v1/alunos/{result.Id}", result);
         }
 
         [SwaggerOperation(
@@ -68,7 +68,7 @@ namespace Alunos.Api.App.Extensions
             if (result.Item1 is null || result.Item2.Error)
                 return GenerateErrorResult(result.Item2);
 
-            return Results.Created($"/v1/alunos/{result.Item1.Id}", result.Item1);
+            return Results.Created($"/api/v1/alunos/{result.Item1.Id}", result.Item1);
         }
 
         [SwaggerOperation(
@@ -105,7 +105,7 @@ namespace Alunos.Api.App.Extensions
             [FromQuery, SwaggerParameter("Email do aluno - busca parcial (opcional)")] string? email,
             [FromQuery, SwaggerParameter("Serie do aluno - busca parcial (opcional)")] string? serie,
             [FromQuery, SwaggerParameter("Número da página (padrão: 1)")] int page = 1,
-            [FromQuery, SwaggerParameter("Itens por página (padrão: 10)")] int perPage = 10)
+            [FromQuery, SwaggerParameter("Itens por página (padrão: 10)")] int size = 10)
         {
             var filter = new Filter()
             {
@@ -116,7 +116,7 @@ namespace Alunos.Api.App.Extensions
                 Paging = new()
                 {
                     Page = page,
-                    PerPage = perPage
+                    PerPage = size
                 }
             };
             var result = await alunoService.SelectAlunoByFilterAsync(filter);

@@ -1,14 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Swashbuckle.AspNetCore.Annotations;
 using Alunos.Api.Domain.Aggregates.User.DTOs;
-using Alunos.Api.Domain.Aggregates.User.Entities;
 using Alunos.Api.Domain.SeedWork.ErrorResult;
-using Alunos.Api.Infra.Data.Aluno;
 
 namespace Alunos.Api.App.Extensions;
 
@@ -21,9 +14,16 @@ public static class AuthEndpoints
             .WithTags("Authentication")
             .WithName("Login")
             .Produces<LoginResponse>(StatusCodes.Status200OK)
-            .Produces<ErrorResult>(StatusCodes.Status400BadRequest)
             .Produces<ErrorResult>(StatusCodes.Status401Unauthorized)
             .Produces<ErrorResult>(StatusCodes.Status403Forbidden);
+
+        endpoints.MapPost("/api/auth/register", Register)
+            .AllowAnonymous()
+            .WithTags("Authentication")
+            .WithName("Register")
+            .Produces<RegisterResponse>(StatusCodes.Status201Created)
+            .Produces<ErrorResult>(StatusCodes.Status400BadRequest)
+            .Produces<ErrorResult>(StatusCodes.Status409Conflict);
     }
 
     [SwaggerOperation(
@@ -33,7 +33,7 @@ public static class AuthEndpoints
     private static async Task<IResult> Login(
         [FromBody] LoginRequest request,
         [FromServices] IConfiguration configuration,
-        [FromServices] IAlunoContext context)
+        [FromServices] Alunos.Api.Domain.Aggregates.User.IUserService userService)
     {
         // Validation
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
@@ -55,62 +55,81 @@ public static class AuthEndpoints
             });
         }
 
-        // Find user (case-insensitive email)
-        var user = await context.Users
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
-
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-        {
-            return Results.Json(new ErrorResult
-            {
-                Message = "Invalid email or password",
-                StatusCode = ErrorCode.Unauthorized
-            }, statusCode: 401);
-        }
-
-        if (!user.IsActive)
-        {
-            return Results.Json(new ErrorResult
-            {
-                Message = "Account is inactive",
-                StatusCode = ErrorCode.Forbidden
-            }, statusCode: 403);
-        }
-
-        // Generate JWT token
+        // JWT Settings (moved inside to pass to service, though ideally service should have config injected)
+        // For now, passing config values to service method to keep service pure of IConfiguration if wanted,
+        // or we could inject IConfiguration into Service. Service implementation above assumes args.
+        // Let's use the args we created in IUserService signature.
+        
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
         var issuer = jwtSettings["Issuer"] ?? "alunos-api";
         var audience = jwtSettings["Audience"] ?? "alunos-web";
         var expirationHours = int.Parse(jwtSettings["ExpirationHours"] ?? "24");
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expiresAt = DateTime.UtcNow.AddHours(expirationHours);
+        var (response, error) = await userService.AuthenticateAsync(
+            request.Email, 
+            request.Password,
+            secretKey,
+            issuer,
+            audience,
+            expirationHours);
 
-        var claims = new[]
+        if (response is null || error.Error)
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+            return error.StatusCode switch
+            {
+                ErrorCode.Unauthorized => Results.Json(error, statusCode: 401),
+                ErrorCode.Forbidden => Results.Json(error, statusCode: 403),
+                _ => Results.BadRequest(error)
+            };
+        }
 
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: expiresAt,
-            signingCredentials: credentials
-        );
+        return Results.Ok(response);
+    }
 
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return Results.Ok(new LoginResponse
+
+    [SwaggerOperation(
+        Summary = "Registra um novo usuário",
+        Description = "Cria uma nova conta de usuário."
+    )]
+    private static async Task<IResult> Register(
+        [FromBody] RegisterRequest request,
+        [FromServices] Alunos.Api.Domain.Aggregates.User.IUserService userService)
+    {
+        // Validation
+        if (string.IsNullOrWhiteSpace(request.Name) || 
+            string.IsNullOrWhiteSpace(request.Email) || 
+            string.IsNullOrWhiteSpace(request.Password))
         {
-            Token = tokenString,
-            Email = user.Email,
-            ExpiresAt = expiresAt
-        });
+            return Results.BadRequest(new ErrorResult
+            {
+                Message = "Name, email and password are required",
+                StatusCode = ErrorCode.BadRequest
+            });
+        }
+
+        if (!IsValidEmail(request.Email))
+        {
+            return Results.BadRequest(new ErrorResult
+            {
+                Message = "Invalid email format",
+                StatusCode = ErrorCode.BadRequest
+            });
+        }
+
+        var (response, error) = await userService.RegisterAsync(request);
+
+        if (response is null || error.Error)
+        {
+            return error.StatusCode switch
+            {
+                ErrorCode.Conflict => Results.Conflict(error),
+                _ => Results.BadRequest(error)
+            };
+        }
+
+        return Results.Created($"/api/users/{response.Id}", response);
     }
 
     private static bool IsValidEmail(string email)
