@@ -1,0 +1,14 @@
+nohup: ignoring input
+Usando as configurações de inicialização de D:\Rafael\Desktop\Projetos\teste\alunos-api\src\Alunos.Api.App\Properties\launchSettings.json...
+Compilando...
+D:\Rafael\Desktop\Projetos\teste\alunos-api\src\Alunos.Api.App\Program.cs(41,80): warning CS8604: Possível argumento de referência nula para o parâmetro 's' em 'byte[] Encoding.GetBytes(string s)'. [D:\Rafael\Desktop\Projetos\teste\alunos-api\src\Alunos.Api.App\Alunos.Api.App.csproj]
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5116
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\Rafael\Desktop\Projetos\teste\alunos-api\src\Alunos.Api.App
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.

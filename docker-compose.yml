@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: alunos_postgres
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alunos_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alunos-network
+
+  alunos-api:
+    image: ricodealma/alunos-api:latest
+    container_name: alunos-api
+    restart: always
+    ports:
+      - '5000:8080'
+    environment:
+      APP_ENV: DEV
+      SQL_SERVER: postgres
+      SQL_USER: postgres
+      SQL_PASSWORD: postgres
+      SQL_DATABASE: alunos_db
+      X_API_HEADER: 9f3c5a8d3b6e4f1ab2d3e7c9a1f0b3d4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0
+      JwtSettings__SecretKey: "your-super-secret-key-minimum-32-characters-long-for-production"
+      JwtSettings__Issuer: "alunos-api"
+      JwtSettings__Audience: "alunos-web"
+      JwtSettings__ExpirationHours: "24"
+      AllowedOrigins__0: "http://localhost:3000"
+      AllowedOrigins__1: "http://alunos-web:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - alunos-network
+
+  alunos-web:
+    image: ricodealma/alunos-web:latest
+    container_name: alunos-web
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+      NODE_ENV: production
+    depends_on:
+      - alunos-api
+    networks:
+      - alunos-network
+
+volumes:
+  postgres_data:
+
+networks:
+  alunos-network:
+    driver: bridge
